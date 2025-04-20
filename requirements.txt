@@ -1,4 +1,5 @@
 requests
 beautifulsoup4
-schedule
-python-dotenv
+python-dotenv # For local testing, not used in Cloud Function runtime directly
+google-cloud-storage # For persistent state
+functions-framework # For Cloud Functions entry point
