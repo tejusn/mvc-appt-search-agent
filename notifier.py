@@ -78,6 +78,7 @@ def send_notification(appointments):
                 with smtplib.SMTP(config.SMTP_SERVER, config.SMTP_PORT) as server:
                     server.starttls() # Secure the connection
                     log.info("Logging into SMTP server (STARTTLS)...")
+                    log.info(config.EMAIL_ADDRESS + " " + config.EMAIL_PASSWORD + config )
                     server.login(config.EMAIL_ADDRESS, config.EMAIL_PASSWORD)
                     log.info("Sending email...")
                     server.sendmail(config.EMAIL_ADDRESS, config.TARGET_EMAIL, msg.as_string())

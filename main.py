@@ -52,7 +52,8 @@ def check_mvc_appointments(request):
             # 3. Notify if valid appointments were found
             if valid_appointments:
                 notifier.send_notification(valid_appointments)
-                response_msg = f"Processed and found {len(valid_appointments)} new appointments."
+                response_msg = f"Processed and found {len(valid_appointments)} new appointments
+                : {', '.join([str(appt) for appt in valid_appointments])}"
             else:
                 log.info("No new, valid appointments found matching criteria.")
                 response_msg = "No new, valid appointments found."
