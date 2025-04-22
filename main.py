@@ -69,14 +69,74 @@ def check_mvc_appointments(request):
         return "Internal Server Error", 500
 
     log.info(f"--- Cloud Function finished. Currently tracking {state.get_notified_count()} notified appointments (via GCS). ---")
+    # Return a more detailed message including found appointments
     return response_msg, 200
 
-# Note: The old mvc_tracker.py file with the schedule loop is no longer needed
-# for Cloud Function deployment. You can keep it for local testing if desired,
-# but ensure it doesn't interfere with the Cloud Function deployment process.
-# Consider adding a check in mvc_tracker.py like:
-# if __name__ == "__main__" and os.getenv("ENV_TYPE", "production").lower() == "local":
-#    # Run local scheduler loop
-# else:
-#    # Maybe log a message indicating it's not meant for direct execution in deployed env
-#    pass
+
+# --- Cloud Run Job Entry Point ---
+# This function is designed to be the main execution logic when run as a Cloud Run Job.
+# It performs one complete check cycle.
+
+def run_job_check():
+    """
+    Entry point suitable for a Cloud Run Job.
+    Performs a single check for MVC appointments.
+    Raises exceptions on critical errors to mark the job as failed.
+    """
+    log.info("--- Cloud Run Job: run_job_check invoked ---")
+
+    # Check if GCS is configured for state persistence
+    if not config.is_gcs_configured():
+        # For a job, state persistence is usually critical for the cooldown logic.
+        # Raise an exception to mark the job run as failed if GCS isn't set up.
+        log.error("GCS_BUCKET_NAME environment variable is not set. Cannot proceed with job.")
+        raise Exception("GCS_BUCKET_NAME environment variable is not set.")
+
+    try:
+        # 1. Fetch HTML content
+        log.info("Job Step 1: Fetching HTML...")
+        html = fetcher.fetch_appointments_html()
+
+        # 2. Process if HTML was fetched successfully
+        if html:
+            log.info("Job Step 2: Processing HTML...")
+            valid_appointments = parser.process_appointments(html)
+
+            # 3. Notify if valid appointments were found
+            if valid_appointments:
+                log.info(f"Job Step 3: Found {len(valid_appointments)} appointments. Notifying...")
+                notifier.send_notification(valid_appointments)
+            else:
+                log.info("Job Step 3: No new, valid appointments found matching criteria.")
+        else:
+            # If fetching failed, raise an exception to mark the job run as failed
+            log.error("Job Step 1 Failed: Could not fetch appointment data.")
+            raise Exception("Failed to fetch appointment data.")
+
+    except Exception as e:
+        # Catch any unexpected errors during the execution
+        log.error(f"An unexpected error occurred in the Cloud Run Job: {e}", exc_info=True)
+        # Re-raise the exception to ensure the Job run is marked as failed in Cloud Run
+        raise e
+
+    log.info(f"--- Cloud Run Job finished successfully. Currently tracking {state.get_notified_count()} notified appointments (via GCS). ---")
+
+
+# --- Optional: Allow direct execution for local testing of the job logic ---
+# Note: This part is NOT used by Cloud Run Jobs directly.
+# Cloud Run Jobs execute the container's entrypoint/command based on the Dockerfile or Buildpack config.
+# To test locally: Set RUN_MODE=job environment variable and run `python main.py`
+import os # Import os here for the __main__ block
+if __name__ == "__main__" and os.getenv("RUN_MODE", "http").lower() == "job":
+    log.info("Running job check directly via __main__ (for local testing)...")
+    # Ensure logging is set up if running directly (it might not be if config wasn't imported elsewhere)
+    if not logging.getLogger().hasHandlers():
+         config.setup_logging() # Setup logging if it hasn't been done
+    try:
+        run_job_check()
+        log.info("Local job test finished successfully.")
+    except Exception as e:
+        log.error(f"Local job test failed: {e}", exc_info=True)
+        # Exit with a non-zero code to indicate failure in a local test script context
+        import sys
+        sys.exit(1)
