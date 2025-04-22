@@ -1,4 +1,5 @@
 import os
+import json # Import the json module
 from dotenv import load_dotenv
 import logging
 
@@ -18,7 +19,12 @@ MVC_URL = os.getenv("MVC_URL", "https://telegov.njportal.com/njmvc/AppointmentWi
 MONITOR_ALL_LOCATIONS = True # Default to specific list (original requirement)
 
 # List of specific locations to target if MONITOR_ALL_LOCATIONS is False
-# (Using names found in locationData, e.g., "Bayonne - Real ID")
+# Can be overridden by environment variable SPECIFIC_TARGET_LOCATIONS_JSON (a JSON string array)
+# Example: '["Bayonne - Real ID", "Newark - Real ID"]'
+SPECIFIC_TARGET_LOCATIONS_JSON = os.getenv("SPECIFIC_TARGET_LOCATIONS_JSON")
+
+CHECK_INTERVAL_MINUTES = 60
+
 # Default specific locations if environment variable is not set or invalid
 _DEFAULT_SPECIFIC_TARGET_LOCATIONS = [
     "Bayonne - Real ID",
@@ -27,6 +33,7 @@ _DEFAULT_SPECIFIC_TARGET_LOCATIONS = [
 ]
 
 SPECIFIC_TARGET_LOCATIONS = _DEFAULT_SPECIFIC_TARGET_LOCATIONS
+# Now check if the environment variable was set and try to parse it
 if SPECIFIC_TARGET_LOCATIONS_JSON:
     try:
         parsed_locations = json.loads(SPECIFIC_TARGET_LOCATIONS_JSON)
@@ -55,7 +62,7 @@ ALL_AVAILABLE_LOCATIONS = [
 ]
 
 # --- Other Configuration ---
-TARGET_EMAIL = os.getenv("TARGET_EMAIL", "successtej@gmail.com") # Email recipient
+TARGET_EMAIL = os.getenv("TARGET_EMAIL", "divtejus@gmail.com") # Email recipient
 # CHECK_INTERVAL_MINUTES is no longer needed as triggering is handled by Cloud Scheduler
 
 # --- Email Configuration (Environment Variables) ---
