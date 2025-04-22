@@ -8,7 +8,9 @@ steps:
   - name: gcr.io/k8s-skaffold/pack
     env:
       # Pass function target to buildpack environment (used by Python buildpack)
-      - GOOGLE_FUNCTION_TARGET=$_FUNCTION_TARGET
+  # Enable this to add function endpoint as HTTP trigger
+      # - GOOGLE_FUNCTION_TARGET=$_FUNCTION_TARGET
+      - GOOGLE_ENTRYPOINT=python -c "import main; main.run_job_check()"
     args:
       - build
       # Target image path in Artifact Registry: HOSTNAME/PROJECT_ID/REPO_NAME/SERVICE_NAME:COMMIT_SHA
@@ -18,7 +20,10 @@ steps:
       - '--network=cloudbuild' # Allows buildpacks to reach public network for dependencies
       - '--path=.' # Build from the current directory where cloudbuild.yaml is located
       # Explicitly pass function target to buildpack args as well
-      - '--env=GOOGLE_FUNCTION_TARGET'
+# Enable this to add function endpoint as HTTP trigger
+      # - '--env=GOOGLE_FUNCTION_TARGET'
+      - '--env=GOOGLE_ENTRYPOINT'
+
     id: Buildpack
     entrypoint: pack
 
