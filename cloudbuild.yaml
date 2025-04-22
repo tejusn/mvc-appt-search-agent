@@ -6,11 +6,11 @@ steps:
   # This step automatically detects Python, installs dependencies from requirements.txt,
   # and packages the application defined by _FUNCTION_TARGET in main.py.
   - name: gcr.io/k8s-skaffold/pack
-    # env: # Comment out the entire env block to ensure Procfile is used
-      # Pass function target to buildpack environment (used by Python buildpack)
-  # Enable this to add function endpoint as HTTP trigger
+    env:
+      # Explicitly tell the buildpack to use the 'job' process type from the Procfile
+      - GOOGLE_PROCESS_TYPE=job
+      # Ensure other entrypoint/target vars remain commented out or removed
       # - GOOGLE_FUNCTION_TARGET=$_FUNCTION_TARGET
-      # Comment out the explicit entrypoint override
       # - GOOGLE_ENTRYPOINT=python3 -c "import main; main.run_job_check()"
     args:
       - build
@@ -20,9 +20,9 @@ steps:
       - '--builder=gcr.io/buildpacks/builder:v1'
       - '--network=cloudbuild' # Allows buildpacks to reach public network for dependencies
       - '--path=.' # Build from the current directory where cloudbuild.yaml is located
-      # Explicitly pass function target to buildpack args as well
-# Enable this to add function endpoint as HTTP trigger
-      # Comment out passing the env vars for entrypoint/target to args
+      # Pass the GOOGLE_PROCESS_TYPE environment variable to the buildpack
+      - '--env=GOOGLE_PROCESS_TYPE'
+      # Ensure other entrypoint/target args remain commented out or removed
       # - '--env=GOOGLE_FUNCTION_TARGET'
       # - '--env=GOOGLE_ENTRYPOINT'
 
