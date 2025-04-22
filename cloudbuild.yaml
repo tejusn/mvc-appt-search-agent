@@ -1,0 +1,107 @@
+# Cloud Build configuration for deploying the MVC Tracker as a Cloud Run service
+# using Google Cloud Buildpacks.
+
+steps:
+  # 1. Build container image using Buildpacks
+  # This step automatically detects Python, installs dependencies from requirements.txt,
+  # and packages the application defined by _FUNCTION_TARGET in main.py.
+  - name: gcr.io/k8s-skaffold/pack
+    env:
+      # Pass function target to buildpack environment (used by Python buildpack)
+      - GOOGLE_FUNCTION_TARGET=$_FUNCTION_TARGET
+    args:
+      - build
+      # Target image path in Artifact Registry: HOSTNAME/PROJECT_ID/REPO_NAME/SERVICE_NAME:COMMIT_SHA
+      - >-
+        $_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/$REPO_NAME/$_SERVICE_NAME:$COMMIT_SHA
+      - '--builder=gcr.io/buildpacks/builder:v1'
+      - '--network=cloudbuild' # Allows buildpacks to reach public network for dependencies
+      - '--path=.' # Build from the current directory where cloudbuild.yaml is located
+      # Explicitly pass function target to buildpack args as well
+      - '--env=GOOGLE_FUNCTION_TARGET'
+    id: Buildpack
+    entrypoint: pack
+
+  # 2. Push the container image to Artifact Registry
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - >-
+        $_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/$REPO_NAME/$_SERVICE_NAME:$COMMIT_SHA
+    id: Push
+
+  # 3. Deploy the container image to Cloud Run
+  # This updates the specified Cloud Run service with the newly built image.
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+    args:
+      - run
+      - services
+      - update # Update existing service or create if not found
+      - $_SERVICE_NAME # Name of the Cloud Run service
+      - '--platform=managed' # Use the fully managed Cloud Run platform
+      - >- # Specify the container image to deploy
+        --image=$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/$REPO_NAME/$_SERVICE_NAME:$COMMIT_SHA
+      - >- # Add labels for tracking the deployment source
+        --labels=managed-by=gcp-cloud-build-deploy-cloud-run,commit-sha=$COMMIT_SHA,gcb-build-id=$BUILD_ID,gcb-trigger-id=$_TRIGGER_ID
+      - '--region=$_DEPLOY_REGION' # Specify the region for the Cloud Run service
+
+      # --- Set Environment Variables for the Cloud Run service ---
+      # Use ^##^ as a delimiter for multiple key-value pairs.
+      # Values are taken from the 'substitutions' block below or trigger settings.
+      - >-
+        --set-env-vars=^##^GCS_BUCKET_NAME=$_GCS_BUCKET_NAME##TARGET_EMAIL=$_TARGET_EMAIL##NOTIFICATION_COOLDOWN_HOURS=$_NOTIFICATION_COOLDOWN_HOURS##MONITOR_ALL_LOCATIONS=$_MONITOR_ALL_LOCATIONS##SMTP_PORT=$_SMTP_PORT
+
+      # --- Set Secrets for the Cloud Run service ---
+      # Links environment variables in the container to secrets stored in Secret Manager.
+      # Format: ENV_VAR_NAME=SECRET_NAME:VERSION (use 'latest' for the newest version)
+      # Ensure these secret names (e.g., MVC_EMAIL_PASSWORD) match those created in Secret Manager.
+      - >-
+        --set-secrets=^##^EMAIL_PASSWORD=MVC_EMAIL_PASSWORD:latest##EMAIL_ADDRESS=MVC_EMAIL_ADDRESS:latest##SMTP_SERVER=MVC_SMTP_SERVER:latest
+
+      - '--quiet' # Suppress interactive prompts during deployment
+    id: Deploy
+    entrypoint: gcloud
+
+# List the final container image built by this pipeline
+images:
+  - >-
+    $_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/$REPO_NAME/$_SERVICE_NAME:$COMMIT_SHA
+
+# Default substitution values. These can be overridden by Cloud Build trigger settings.
+# Variables starting with underscore (_) are user-defined.
+# Variables without underscore (like REPO_NAME, COMMIT_SHA, BUILD_ID) are often
+# provided automatically by Cloud Build triggers connected to source repositories.
+substitutions:
+  # --- Standard Cloud Build Variables (Usually provided by trigger) ---
+  # REPO_NAME: (Example: 'my-github-repo') Name of the source repository if using trigger
+  # COMMIT_SHA: (Example: 'abcdef123...') Git commit SHA being built if using trigger
+  # BUILD_ID: (Example: 'uuid...') Unique ID for this build
+  # --- User-Defined Substitutions ---
+
+  # Entry point configuration for Buildpacks
+  _ENTRYPOINT: main.py # Your main Python file containing the function. (Likely correct)
+  _FUNCTION_TARGET: check_mvc_appointments # The *function name* inside main.py to execute. (Corrected)
+
+  # Artifact Registry Configuration
+  _AR_HOSTNAME: us-central1-docker.pkg.dev # !!! CHANGE 'us-central1' if your Artifact Registry is in a different region !!!
+  _AR_PROJECT_ID: mvc-appt-tracker # !!! CHANGE to your actual Google Cloud Project ID !!!
+  _AR_REPOSITORY: cloud-run-source-deploy # !!! CHANGE to your Artifact Registry repository name if different !!!
+
+  # Cloud Run Configuration
+  _SERVICE_NAME: mvc-appt-tracker # !!! CHANGE to your desired Cloud Run service name !!!
+  _DEPLOY_REGION: us-central1 # !!! CHANGE to your desired Cloud Run deployment region !!!
+
+  # Trigger ID (Example, usually provided by trigger)
+  _TRIGGER_ID: 7be091c8-32d9-4fa0-bb58-b7f4d264e795
+
+  # --- Application-Specific Environment Variable Substitutions ---
+  _GCS_BUCKET_NAME: YOUR_UNIQUE_BUCKET_NAME # *** MUST SET THIS to your GCS bucket name ***
+  _TARGET_EMAIL: successtej@gmail.com # Set your target notification email address
+  _NOTIFICATION_COOLDOWN_HOURS: "12" # Cooldown period (as string)
+  _MONITOR_ALL_LOCATIONS: "False" # Set to "True" or "False" (as string) to control location scope
+  _SMTP_PORT: "587" # Set your SMTP port (as string, e.g., "587" or "465")
+
+# Build options
+options:
+  substitutionOption: ALLOW_LOOSE # Allows extra substitutions not defined here (e.g., from trigger)
+  logging: CLOUD_LOGGING_ONLY # Send logs directly to Cloud Logging
