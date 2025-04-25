@@ -1,4 +1,4 @@
-## Product Requirements Document: NJ MVC Appointment Tracker
+f## Product Requirements Document: NJ MVC Appointment Tracker
 
 **1. Introduction**
 
@@ -38,7 +38,7 @@ The target user is an individual seeking a REAL ID appointment at the NJ MVC who
 *   **FR3: Data Extraction (To be implemented via RooCode/Cline/Cursor):** The system shall be able to extract relevant information about available REAL ID appointments from the NJ MVC website. This includes the location, date, and time of the appointment.
 *   **FR4: Location Filtering:** The system shall filter the found appointments to only include those at the locations identified in FR1.
 *   **FR5: Weekend Preference:** If available, the system should prioritize and notify the user about appointments scheduled on weekends.
-*   **FR6: Email Notification:** When a qualifying REAL ID appointment is found, the system shall send an email notification to successtej@gmail.com.
+*   **FR6: Email Notification:** When a qualifying REAL ID appointment is found, the system shall send an email notification to youremail@gmail.com.
 *   **FR7: Email Content:** The email notification shall include the following information:
     *   The name and address of the NJ MVC location.
     *   The date of the appointment.

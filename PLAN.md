@@ -6,7 +6,7 @@
     *   Bayonne MVC Agency
     *   North Bergen MVC Agency
     *   Newark MVC Agency
-*   **Target Email:** `successtej@gmail.com`
+*   **Target Email:** `youremail@gmail.com`
 *   **Check Interval:** 1 hour (60 minutes)
 *   **Target URL:** `https://telegov.njportal.com/njmvc/AppointmentWizard/12`
 *   **Appointment Type:** REAL ID

@@ -1,6 +1,10 @@
 import schedule
 import time
 import logging
+import os # Import the os module
+
+# Import local modules
+import config
 
 # Import local modules
 import config
@@ -39,11 +43,13 @@ def job():
     log.info(f"--- Check finished. Currently tracking {state.get_notified_count()} notified appointments. Waiting for next run... ---")
 
 
-# --- Main Execution ---
+# --- Main Execution (for Local Scheduled Testing) ---
 if __name__ == "__main__":
-    log.info("--- NJ MVC Appointment Tracker Starting ---")
-    log.info(f"Checking URL: {config.MVC_URL}")
-    # Get the active list of locations being monitored
+    # Only run the scheduler loop if explicitly in local mode
+    if os.getenv("ENV_TYPE", "production").lower() == "local":
+        log.info("--- NJ MVC Appointment Tracker Starting (Local Scheduler Mode) ---")
+        log.info(f"Checking URL: {config.MVC_URL}")
+        # Get the active list of locations being monitored
     active_locations = config.get_active_target_locations()
     log.info(f"Monitoring Locations ({'ALL' if config.MONITOR_ALL_LOCATIONS else 'SPECIFIC'}): {', '.join(active_locations)}")
     log.info(f"Notification Email: {config.TARGET_EMAIL}")
@@ -75,4 +81,10 @@ if __name__ == "__main__":
             # Optional: Add a longer sleep here to prevent rapid error loops
             time.sleep(300) # Sleep for 5 minutes after an error in the loop
 
-    log.info("--- NJ MVC Appointment Tracker Stopped ---")
+        log.info("--- NJ MVC Appointment Tracker (Local Scheduler Mode) Stopped ---")
+    else:
+        print("--------------------------------------------------------------------------")
+        print("INFO: mvc_tracker.py is intended for local scheduled testing.")
+        print("      Set ENV_TYPE=local environment variable to run the scheduler.")
+        print("      For Cloud Function deployment, use main.py as the entry point.")
+        print("--------------------------------------------------------------------------")
