@@ -63,7 +63,7 @@ The primary goal is to save users the time and effort of manually checking the w
     *   *(Optional)* Set `ENV_TYPE=local` in `.env` to ensure local settings are loaded correctly.
 
 5.  **Configure `config.py` (Optional):**
-    *   `TARGET_EMAIL`: Change the recipient email address if needed (default: `successtej@gmail.com`).
+    *   `TARGET_EMAIL`: Change the recipient email address if needed (default: `youremail@gmail.com`).
     *   `MONITOR_ALL_LOCATIONS`: Set to `True` to check all locations, `False` (default) to check only those in `SPECIFIC_TARGET_LOCATIONS`.
     *   `SPECIFIC_TARGET_LOCATIONS`: Modify this list if `MONITOR_ALL_LOCATIONS` is `False`.
     *   `NOTIFICATION_COOLDOWN_HOURS`: Adjust the cooldown period if desired.
