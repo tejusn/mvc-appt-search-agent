@@ -16,7 +16,7 @@ MVC_URL = os.getenv("MVC_URL", "https://telegov.njportal.com/njmvc/AppointmentWi
 # --- Location Configuration ---
 # Set this flag to True to monitor all locations found in the data,
 # or False to monitor only the specific locations listed in SPECIFIC_TARGET_LOCATIONS.
-MONITOR_ALL_LOCATIONS = True # Default to specific list (original requirement)
+MONITOR_ALL_LOCATIONS = False # Default to specific list (original requirement)
 
 # List of specific locations to target if MONITOR_ALL_LOCATIONS is False
 # Can be overridden by environment variable SPECIFIC_TARGET_LOCATIONS_JSON (a JSON string array)
@@ -27,9 +27,9 @@ CHECK_INTERVAL_MINUTES = 60
 
 # Default specific locations if environment variable is not set or invalid
 _DEFAULT_SPECIFIC_TARGET_LOCATIONS = [
-    "Bayonne - Real ID",
-    "North Bergen - Real ID",
-    "Newark - Real ID"
+    "Bayonne MVC Agency",
+    "North Bergen MVC Agency",
+    "Newark MVC Agency"
 ]
 
 SPECIFIC_TARGET_LOCATIONS = _DEFAULT_SPECIFIC_TARGET_LOCATIONS
@@ -62,7 +62,7 @@ ALL_AVAILABLE_LOCATIONS = [
 ]
 
 # --- Other Configuration ---
-TARGET_EMAIL = os.getenv("TARGET_EMAIL", "divtejus@gmail.com") # Email recipient
+TARGET_EMAIL = os.getenv("TARGET_EMAIL", "youremail@gmail.com") # Email recipient
 # CHECK_INTERVAL_MINUTES is no longer needed as triggering is handled by Cloud Scheduler
 
 # --- Email Configuration (Environment Variables) ---
